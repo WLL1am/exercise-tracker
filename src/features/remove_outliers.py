@@ -192,3 +192,44 @@ dataset, outliers, X_scores = mark_outliers_lof(df, outlier_columns)
 for col in outlier_columns:
     plot_binary_outliers(dataset=dataset, col=col, outlier_col="outlier_lof", reset_index=True)
     
+
+# Check outliers grouped by exercise
+exercise = "bench"
+for col in outlier_columns:
+    dataset = mark_outliers_iqr(df[df["exercise"] == exercise], col)
+    plot_binary_outliers(dataset, col, col + "_outlier", reset_index=True)
+
+for col in outlier_columns:
+    dataset = mark_outliers_chauvenet(df[df["exercise"] == exercise], col)
+    plot_binary_outliers(dataset, col, col + "_outlier", reset_index=True)
+
+dataset, outliers, X_scores = mark_outliers_lof(df[df["exercise"] == exercise], outlier_columns)
+for col in outlier_columns:
+    plot_binary_outliers(dataset=dataset, col=col, outlier_col="outlier_lof", reset_index=True)
+    
+    
+# Choose method to deal with outliers
+# Testing on single column
+col = "gyr_z"
+dataset = mark_outliers_chauvenet(df, col=col)
+dataset[dataset["gyr_z_outlier"]]
+dataset.loc[dataset["gyr_z_outlier"], "gyr_z"] = np.nan
+
+# Create a loop
+outliers_removed_df = df.copy()
+for col in outlier_columns:
+    for exercise in df["exercise"].unique():
+        dataset = mark_outliers_chauvenet(df[df["exercise"] == exercise], col)
+        
+        # Replace outlier values with NaN
+        dataset.loc[dataset[col + "_outlier"], col] = np.nan
+        outliers_removed_df.loc[(outliers_removed_df["exercise"] == exercise), col] = dataset[col]
+        
+        n_outliers = len(dataset) - len(dataset[col].dropna())
+        print(f"Removed {n_outliers} from {col} for {exercise}")
+        
+outliers_removed_df.info()
+
+
+# Export new dataframe
+outliers_removed_df.to_pickle("../../data/interim/02_outliers_removed_chauvenets.pkl")
