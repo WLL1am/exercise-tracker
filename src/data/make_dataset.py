@@ -60,7 +60,6 @@ for f in files:
         gyr_df = pd.concat([gyr_df, df])
         
 
-
 # datetimes
 acc_df.info()
 
@@ -124,3 +123,50 @@ def read_data_from_files(files):
     return acc_df, gyr_df
 
 acc_df, gyr_df = read_data_from_files(files)
+
+
+# Merge datasets
+data_merged = pd.concat([acc_df.iloc[:,:3], gyr_df], axis=1)
+
+data_merged.columns = [
+    "acc_x",
+    "acc_y",
+    "acc_z",
+    "gyr_x",
+    "gyr_y",
+    "gyr_z",
+    "exercise",
+    "intensity",
+    "participant",
+    "set",
+]
+
+
+# Resample Data (freq conversion)
+# Acceleromater:    12.500 Hz
+# Gyroscope:        25.000 Hz
+sampling = {
+    'acc_x': "mean", 
+    'acc_y': "mean", 
+    'acc_z': "mean", 
+    'gyr_x': "mean", 
+    'gyr_y': "mean", 
+    'gyr_z': "mean", 
+    'exercise': "last",
+    'intensity': "last", 
+    'participant': "last", 
+    'set': "last",
+}
+
+data_merged[:1000].resample(rule="200ms").apply(sampling)
+
+# Split by day
+days = [g for n, g in data_merged.groupby(pd.Grouper(freq="D"))]
+data_resampled = pd.concat([df.resample(rule="200ms").apply(sampling).dropna() for df in days])
+
+data_resampled["set"] = data_resampled["set"].astype("int")
+data_resampled.info()
+
+
+# Export dataset
+data_resampled.to_pickle("../../data/interim/01_data_processed.pkl")
