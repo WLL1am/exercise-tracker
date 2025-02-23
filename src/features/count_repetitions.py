@@ -66,3 +66,32 @@ LowPass.low_pass_filter(
 )[column + "_lowpass"].plot()
 
 
+# Create function to count repetitions
+def count_reps(dataset, cutoff=0.4, order=10, column="acc_r"):
+    data = LowPass.low_pass_filter(
+        dataset, col=column, sampling_frequency=fs, cutoff_frequency=cutoff, order=order
+    )
+    indexes = argrelextrema(data[column + "_lowpass"].values, np.greater)
+    peaks = data.iloc[indexes]
+    
+    fig, ax = plt.subplots()
+    plt.plot(dataset[f"{column}_lowpass"])
+    plt.plot(peaks[f"{column}_lowpass"], "o", color="red")
+    ax.set_ylabel(f"{column}_lowpass")
+    exercise = dataset["exercise"].iloc[0].title()
+    intensity = dataset["intensity"].iloc[0].title()
+    plt.title(f"{intensity} {exercise}: {len(peaks)} Reps")
+    plt.show()
+    
+    return len(peaks)
+
+count_reps(bench_set, cutoff=0.4)
+count_reps(squat_set, cutoff=0.35)
+count_reps(row_set, cutoff=0.6, column="gyr_x")
+count_reps(ohp_set, cutoff=0.35)
+count_reps(dead_set, cutoff=0.4)
+
+    
+    
+    
+    
