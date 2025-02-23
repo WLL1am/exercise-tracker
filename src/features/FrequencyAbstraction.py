@@ -54,5 +54,5 @@ class FourierTransformation:
                 PSD = np.divide(np.square(real_ampl), float(len(real_ampl)))
                 PSD_pdf = np.divide(PSD, np.sum(PSD))
                 data_table.loc[i, col + "_pse"] = -np.sum(np.log(PSD_pdf) * PSD_pdf)
-                
-            return data_table
+
+        return data_table
