@@ -92,6 +92,33 @@ count_reps(ohp_set, cutoff=0.35)
 count_reps(dead_set, cutoff=0.4)
 
     
+# Create benchmark dataframe
+df["reps"] = df["intensity"].apply(lambda x: 5 if x == "heavy" else 10)
+rep_df = df.groupby(["exercise", "intensity", "set"])["reps"].max().reset_index()
+rep_df["reps_pred"] = 0
+
+for s in df["set"].unique():
+    subset = df[df["set"] == s]
     
+    column = "acc_r"
+    cutoff = 0.4
     
-    
+    if subset["exercise"].iloc[0] == "squat":
+        cutoff = 0.35
+        
+    if subset["exercise"].iloc[0] == "row":
+        cutoff = 0.65
+        col = "gyr_x"
+        
+    if subset["exercise"].iloc[0] == "ohp":
+        cutoff = 0.35
+        
+    reps = count_reps(subset, cutoff=cutoff, column=column)
+    rep_df.loc[rep_df["set"] == s, "reps_pred"] = reps
+        
+        
+rep_df
+
+# Evaluate Results
+error = mean_absolute_error(rep_df["reps"], rep_df["reps_pred"]).round(2)
+rep_df.groupby(["exercise", "intensity"])["reps", "reps_pred"].mean().plot.bar()
